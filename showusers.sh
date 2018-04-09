@@ -1,14 +1,17 @@
 #!/bin/bash
+
+# нужно установить nmap sshpass
+
 if [[ "$1" ]]	# проверяем введен ли список адресов для проверки
 	then
-		IPLIST=$(nmap -sn $1 | grep 'report' | cut -f 5 -d ' ')		# получаем список IP адресов по указанной сети в аргументе
+		nmap -p 22 -oG .tmp --version-light $1 > /tmp/tt 2>&1		# записывем IP адреса с открытым 22 портом в временный файл
 	else
-		echo Введите сеть; exit
+		echo Введите сеть; exit		# выходим, если не введен аргумент
 fi
 
 ERR=0	# счетчик неудачых подключений
 
-for HOST in $IPLIST	# проходим по каждому адресу
+for HOST in $(cat .tmp | grep 'open' | cut -f 2 -d ' ')         # проходим по каждому адресу
 do
 	DATA=$(sshpass -p "M3gaTek$" ssh -o StrictHostKeychecking=no adminmt@$HOST 'hostname;users' 2>/tmp/tt)	# получаем username hostname с удаленки
 	if [[ "$DATA" ]]	# если hostname username получены
@@ -20,5 +23,5 @@ do
 		ERR=$(($ERR + 1))
 	fi
 done
-
+rm .tmp		# удаляем временный файл
 echo $ERR неудавшихся подключений
